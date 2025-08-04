@@ -115,7 +115,7 @@ wheels = [
 ]
 
 [[package]]
-name = "lesson-1"
+name = "lesson-2"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

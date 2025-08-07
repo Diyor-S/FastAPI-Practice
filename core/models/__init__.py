@@ -6,6 +6,6 @@ from .base import Base
 from .product import Product
 from .db_helper import DBHelper, db_helper
 from .user import User
-
+from .post import Post
 
 # These imports are now available in models python package. We can import those classes without knowing the exact file structure of models package.

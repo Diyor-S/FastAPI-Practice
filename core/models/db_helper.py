@@ -40,4 +40,4 @@ class DBHelper:
     #     await session.close()
 
 
-db_helper = DBHelper(url=settings.db_url, echo=settings.db_echo)
+db_helper = DBHelper(url=settings.db.url, echo=settings.db.echo)

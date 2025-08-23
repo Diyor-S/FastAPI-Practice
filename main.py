@@ -11,12 +11,12 @@ from api_v1 import router as router_v1
 import uvicorn
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    yield
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 app.include_router(router=router_v1, prefix=settings.api_v1_prefix)
 app.include_router(router=items_router)
 # app.include_router(items_router, prefix="items-views") # we can redefine the prefix here

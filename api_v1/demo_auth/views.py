@@ -1,16 +1,21 @@
 import secrets  # imported secrets to actually get to compare at constant time two values - [str, str] or [byte, byte]
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status  # APIRouter for routes , Depends for dependency injection
 # system  HTTPException for throwing exceptions , and status to showing status code when those exceptions occur.
 from fastapi.security import HTTPBasic, HTTPBasicCredentials  # Http Basic for basic username, password authentication
 # HTTPBasicCredentials is what actually stores username and password stuff.
-from typing import Annotated  # Annotated for type hints.
-from fastapi import Header  # Header to receive data from the response header
+from typing import Annotated, Any # Annotated for type hints.
+from fastapi import Header, Response, Cookie  # Header to receive data from the response header
+from time import time
+
 
 router = APIRouter()  # creating an instance of APIRouter class through it now we can access attributes, and methods
 # of APIRouter class.
 
 security = HTTPBasic()  # Creating an instance of HTTPBasic which defines the method __call__, which accepts
+
+
 # an 'instance' - 'self' in this case 'security' and request. Method __call__ returns an instance of
 # 'HTTPBasicCredentials' - return HTTPBasicCredentials(username=username, password=password) ---> this means that
 # when I just take a reference as 'security' to HTTPBasic class. Here, 'security' is an instance of HTTPBasic still.
@@ -69,10 +74,10 @@ def get_auth_user_username(credentials: Annotated[HTTPBasicCredentials, Depends(
     # to get the user's username we again use security -> HTTPBasic() ,
     # This is just an exception that was made to not repeat the stuff 2 times.
     unauthorized_exception = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
-            headers={"WWW-Authenticate": "Basic"},
-        )
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid username or password",
+        headers={"WWW-Authenticate": "Basic"},
+    )
     # The main thing is to actually get to password from our fake db -> dict. so there is a method get that actually
     # allows us to receive the value by key of the dict.
     correct_password = usernames_to_passwords.get(credentials.username)
@@ -112,4 +117,70 @@ def demo_auth_some_http_username(username: Annotated[str, Depends(get_username_b
     return {
         "message": "Hi " + username,
         "username": username
+    }
+
+
+# COOKIE implementation of auth.
+COOKIE: dict[str, dict[str, Any]] = {}
+COOKIE_SESSION_ID_KEY = "web-app-session-id"
+
+
+def generate_session_id():
+    return uuid.uuid4().hex
+
+
+def get_session_data(session_id: Annotated[str, Cookie(alias=COOKIE_SESSION_ID_KEY)]) -> dict:
+
+    if session_id not in COOKIE:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid session id or it is missing",
+        )
+    return COOKIE[session_id]
+
+
+@router.post("/login-cookie/")
+def demo_auth_login_set_cookie(
+        response: Response,
+        username: Annotated[str, Depends(get_auth_user_username)]
+        # username: Annotated[str, Depends(get_username_by_auth_static_token)]
+) -> dict:
+    session_id = generate_session_id()
+    COOKIE[session_id] = {
+        "username": username,
+        "signed_at": int(time())
+    }
+    response.set_cookie(COOKIE_SESSION_ID_KEY, session_id)
+
+    return {"result": "success"}
+
+
+@router.get("/check-cookie/")
+def demo_auth_check_cookie(user_session_data: Annotated[dict, Depends(get_session_data)]):
+    try:
+        username = user_session_data["username"]
+        return {
+            "message": f"Hi, {username}!",
+            **user_session_data
+        }
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="user data not found"
+        )
+
+
+@router.get("/logout-cookie/")
+def demo_auth_logout_cookie(
+        session_id: Annotated[str, Cookie(alias=COOKIE_SESSION_ID_KEY)],
+        response: Response,
+        user_session_data: Annotated[dict, Depends(get_session_data)],
+) -> dict:
+    COOKIE.pop(session_id)
+    response.delete_cookie(COOKIE_SESSION_ID_KEY)
+    username = user_session_data["username"]
+
+    return {
+        "message": f"Bye, {username}",
+        **user_session_data
     }

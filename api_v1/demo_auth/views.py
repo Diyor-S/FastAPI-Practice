@@ -94,6 +94,10 @@ def get_auth_user_username(credentials: Annotated[HTTPBasicCredentials, Depends(
     return credentials.username
 
 
+# Implementation with static token fake token1 and token2 in a dict.
+# What is going on here is, the function accepts static token required positional argument. The type of this param is str, and it is
+# received via the header section in our swagger with the pseudo name 'header-auth-token'. If the token hasn't been got, then throw an
+# exception. At the end, return the 'value' which is the username by the key 'static_token'
 def get_username_by_auth_static_token(static_token: Annotated[str, Header(alias="header-auth-token")]) -> str:
     if static_token not in header_auth_token_to_username:
         raise HTTPException(
@@ -111,7 +115,8 @@ def demo_auth_basic_username(auth_username: Annotated[str, Depends(get_auth_user
         "username": auth_username,
     }
 
-
+# Here, the username is being passed via get_auth_user_username. 'Depends' calls this function for me and makes sure that it got the
+# token from header and as a result returns the username of the user in the fake 'db'.
 @router.get("/http-header-auth/")
 def demo_auth_some_http_username(username: Annotated[str, Depends(get_username_by_auth_static_token)]):
     return {
@@ -125,36 +130,55 @@ COOKIE: dict[str, dict[str, Any]] = {}
 COOKIE_SESSION_ID_KEY = "web-app-session-id"
 
 
+# This function return part first calls 'uuid4()' from the 'uuid' module. And because 'uuid4' returns an 'instance' of class 'UUID',
+# the 'hex' attribute of class 'UUID' can be accessed. By the way 'hex' is a method that returns a string.
+# To conclude, 'uuid.uuid4()' -> 'UUID' class object, while adding .hex calls the method that returns now 'str'.
 def generate_session_id():
     return uuid.uuid4().hex
 
 
+# This function receives a required positional argument 'session_id' which is derived from browsers 'Cookie' -> request headers.
+# I am not sure with the internals of this cookie yet. But I believe, here alias is being given for the 'COOKIE_SESSION_ID_KEY'
+# which is just a pseudo name of it which can be seen in the network -> request headers.
+# I was not sure about the difference between 'request' and 'response' headers, so I just googled it. And the difference was request is
+# what client asks, while the response is what server gives.
 def get_session_data(session_id: Annotated[str, Cookie(alias=COOKIE_SESSION_ID_KEY)]) -> dict:
-
+    # So validation logic of 'session_id' if not inside of fake 'db' , in this case it just a dict and for dict it looks
+    # through the keys. If not found among the keys, then throw an exception and exit the function.
     if session_id not in COOKIE:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid session id or it is missing",
         )
+    # Otherwise, just return the user_data from the dict
     return COOKIE[session_id]
 
 
+# Here, the function accepts two required positional arguments. One is a response, while the other is username which is got as a result
+# of the get_auth_username function's execution. Or username can be retrieved via token not just Basic auth as well.
 @router.post("/login-cookie/")
 def demo_auth_login_set_cookie(
         response: Response,
         username: Annotated[str, Depends(get_auth_user_username)]
         # username: Annotated[str, Depends(get_username_by_auth_static_token)]
 ) -> dict:
+    # Calling the function to generate session_id
     session_id = generate_session_id()
+    # Setting the 'session_id' as the key and the value as a dictionary to store the user data.
     COOKIE[session_id] = {
         "username": username,
         "signed_at": int(time())
     }
+    # Setting the response headers 'Set Cookie' field to make sure the browser is being instructed
+    # that session based approach is being used
+    # and the fact that it should put 'Cookie' field in the request headers in the future.
     response.set_cookie(COOKIE_SESSION_ID_KEY, session_id)
 
     return {"result": "success"}
 
 
+# Here, the dictionary under the key 'session_id' is being passed.
+# And then with the try except showing the data of the user based on the session_id.
 @router.get("/check-cookie/")
 def demo_auth_check_cookie(user_session_data: Annotated[dict, Depends(get_session_data)]):
     try:
@@ -170,13 +194,19 @@ def demo_auth_check_cookie(user_session_data: Annotated[dict, Depends(get_sessio
         )
 
 
+# This function accepts:
+#       'session_id' -> to remove it from the fake 'db',
+#       'response' -> to remove the "Set Cookie" field from the response headers
+#       'user_session_data' -> to get the username to say bye to the client and to show the details of the last user.
 @router.get("/logout-cookie/")
 def demo_auth_logout_cookie(
         session_id: Annotated[str, Cookie(alias=COOKIE_SESSION_ID_KEY)],
         response: Response,
         user_session_data: Annotated[dict, Depends(get_session_data)],
 ) -> dict:
+    # pop() -> here, removes the key 'session_id' from the dictionary -> fake 'db'.
     COOKIE.pop(session_id)
+    # response.delete_cookie() -> is responsible for removing the 'Set Cookie' field from the response headers.
     response.delete_cookie(COOKIE_SESSION_ID_KEY)
     username = user_session_data["username"]
 

@@ -1,10 +1,11 @@
-import secrets  # imported secrets to actually get to compare at constant time two values
+import secrets  # imported secrets to actually get to compare at constant time two values - [str, str] or [byte, byte]
 
 from fastapi import APIRouter, Depends, HTTPException, status  # APIRouter for routes , Depends for dependency injection
 # system  HTTPException for throwing exceptions , and status to showing status code when those exceptions occur.
 from fastapi.security import HTTPBasic, HTTPBasicCredentials  # Http Basic for basic username, password authentication
 # HTTPBasicCredentials is what actually stores username and password stuff.
 from typing import Annotated  # Annotated for type hints.
+from fastapi import Header  # Header to receive data from the response header
 
 router = APIRouter()  # creating an instance of APIRouter class through it now we can access attributes, and methods
 # of APIRouter class.
@@ -58,6 +59,11 @@ usernames_to_passwords = {
     "john": "secret"
 }
 
+header_auth_token_to_username = {
+    "token1": "admin",
+    "token2": "alice"
+}
+
 
 def get_auth_user_username(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
     # to get the user's username we again use security -> HTTPBasic() ,
@@ -83,10 +89,27 @@ def get_auth_user_username(credentials: Annotated[HTTPBasicCredentials, Depends(
     return credentials.username
 
 
+def get_username_by_auth_static_token(static_token: Annotated[str, Header(alias="header-auth-token")]) -> str:
+    if static_token not in header_auth_token_to_username:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid auth token",
+        )
+    return header_auth_token_to_username[static_token]
+
+
 @router.get("/basic-auth-username/")
 def demo_auth_basic_username(auth_username: Annotated[str, Depends(get_auth_user_username)]):
     # Here via get_auth_user_username as a Dependency making a reference auth_username to it.
     return {
-        "message": "Hi",
+        "message": "Hi " + auth_username,
         "username": auth_username,
+    }
+
+
+@router.get("/http-header-auth/")
+def demo_auth_some_http_username(username: Annotated[str, Depends(get_username_by_auth_static_token)]):
+    return {
+        "message": "Hi " + username,
+        "username": username
     }

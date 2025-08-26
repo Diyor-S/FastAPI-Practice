@@ -3,7 +3,7 @@ import jwt  # PyJWT library: to create (encode) access tokens
 import bcrypt   # bcrypt library: to hash passwords securely
 # and validate user-provided passwords against stored hashes.
 from core.config import settings  # custom settings data to store config data.
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 
 
 # This encode_jwt returns an access token.
@@ -15,17 +15,17 @@ def encode_jwt(
         expire_timedelta: timedelta | None = None,
 ) -> str:
     modified_payload = payload.copy()
-    # now_depr = datetime.utcnow()
-    now_main = datetime.now(UTC).replace(tzinfo=None)
+    # now_main = datetime.utcnow()
+    now_main = datetime.now(timezone.utc)
 
     if expire_timedelta:
-        expires = int((now_main + expire_timedelta).timestamp())
+        expires = now_main + expire_timedelta
     else:
-        expires = int((now_main + timedelta(minutes=expire_minutes)).timestamp())
+        expires = now_main + timedelta(minutes=expire_minutes)
 
     modified_payload.update(
         exp=expires,
-        iat=int(now_main.timestamp()),
+        iat=now_main,
         # created_at=int(now_depr.timestamp())
     )
     # Alternative:

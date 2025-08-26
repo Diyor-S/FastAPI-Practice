@@ -7,9 +7,9 @@ from fastapi import (
     Form,  # for Form required package python-multipart
     HTTPException, status
 )
-from typing import Annotated, Any
-from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer
-# from fastapi.security import HTTPBearer
+from typing import Annotated
+from fastapi.security import OAuth2PasswordBearer
+# from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jwt import InvalidTokenError
 from datetime import datetime, timezone
 

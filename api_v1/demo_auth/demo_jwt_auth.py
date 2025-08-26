@@ -8,7 +8,10 @@ from fastapi import (
     HTTPException, status
 )
 from typing import Annotated, Any
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer
+# from fastapi.security import HTTPBearer
+from jwt import InvalidTokenError
+from datetime import datetime, timezone
 
 
 class TokenInfo(BaseModel):
@@ -18,7 +21,9 @@ class TokenInfo(BaseModel):
 
 router = APIRouter()
 
-http_bearer = HTTPBearer()
+# http_bearer = HTTPBearer()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/jwt/login/")
+
 
 john = UserSchema(
     username="john",
@@ -62,15 +67,22 @@ def validate_auth_user(
 
 
 def get_current_token_payload(
-        credentials: Annotated[HTTPAuthorizationCredentials, Depends(http_bearer)]
+        # credentials: Annotated[HTTPAuthorizationCredentials, Depends(http_bearer)],
+        token: Annotated[str, Depends(oauth2_scheme)]
 ) -> dict:
-    token = credentials.credentials
+    # token = credentials.credentials
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token"
         )
-    payload = auth_utils.decode_jwt(token)
+    try:
+        payload = auth_utils.decode_jwt(token)
+    except InvalidTokenError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid token error {e}"
+        )
     return payload
 
 
@@ -111,8 +123,16 @@ def auth_user_issue_jwt(user: Annotated[UserSchema, Depends(validate_auth_user)]
 
 
 @router.get("/users/me")
-def auth_user_check_self_info(user: Annotated[UserSchema, Depends(get_current_active_user)]) -> dict:
+def auth_user_check_self_info(
+        payload: Annotated[dict, Depends(get_current_token_payload)],
+        user: Annotated[UserSchema, Depends(get_current_active_user)]
+) -> dict:
+    iat = payload["iat"]
+    logged_at = datetime.fromtimestamp(iat, tz=timezone.utc)
+    dt_local = logged_at.astimezone()  # convert to local timezone
+    human_readable_logged_at = dt_local.strftime("%d %b %Y, %H:%M:%S %z") + " UTC"
     return {
         "username": user.username,
         "email": user.email,
+        "logged_in_at": human_readable_logged_at
     }

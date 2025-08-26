@@ -46,10 +46,10 @@ def validate_auth_user(
         raise unauthorized_exception
     if not auth_utils.validate_password(
         password=password,
-        hashed_password=users_db[username]["password"]
+        hashed_password=users_db[username].password
     ):
         raise unauthorized_exception
-    if not users_db[username]["is_active"]:
+    if not users_db[username].is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="user inactive"

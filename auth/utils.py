@@ -19,14 +19,14 @@ def encode_jwt(
     now_main = datetime.now(UTC).replace(tzinfo=None)
 
     if expire_timedelta:
-        expires = now_main + expire_timedelta
+        expires = int((now_main + expire_timedelta).timestamp())
     else:
-        expires = now_main + timedelta(minutes=expire_minutes)
+        expires = int((now_main + timedelta(minutes=expire_minutes)).timestamp())
 
     modified_payload.update(
         exp=expires,
-        iat=now_main,
-        created_at=now_depr
+        iat=int(now_main.timestamp()),
+        created_at=int(now_depr.timestamp())
     )
     # Alternative:
     # encoded = jwt.encode(
@@ -69,3 +69,5 @@ def validate_password(password: str, hashed_password: bytes) -> bool:
     # checked_password = bcrypt.checkpw(password.encode(), hashed_password)
     # return checked_password
     return bcrypt.checkpw(password.encode(), hashed_password)
+
+

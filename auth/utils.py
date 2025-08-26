@@ -3,6 +3,7 @@ import jwt  # PyJWT library: to create (encode) access tokens
 import bcrypt   # bcrypt library: to hash passwords securely
 # and validate user-provided passwords against stored hashes.
 from core.config import settings  # custom settings data to store config data.
+from datetime import datetime, timedelta, UTC
 
 
 # This encode_jwt returns an access token.
@@ -10,13 +11,29 @@ def encode_jwt(
         payload: dict,
         private_key: str = settings.auth_jwt.private_key_path.read_text(),
         algorithm: str = settings.auth_jwt.algorithm,
+        expire_minutes: int = settings.auth_jwt.access_token_expire_minutes,
+        expire_timedelta: timedelta | None = None,
 ) -> str:
+    modified_payload = payload.copy()
+    now_depr = datetime.utcnow()
+    now_main = datetime.now(UTC).replace(tzinfo=None)
+
+    if expire_timedelta:
+        expires = now_main + expire_timedelta
+    else:
+        expires = now_main + timedelta(minutes=expire_minutes)
+
+    modified_payload.update(
+        exp=expires,
+        iat=now_main,
+        created_at=now_depr
+    )
     # Alternative:
     # encoded = jwt.encode(
     #     payload, private_key, algorithm=algorithm
     # )
     # return encoded
-    return jwt.encode(payload, private_key, algorithm=algorithm)
+    return jwt.encode(modified_payload, private_key, algorithm=algorithm)
 
 
 # This one is used in my case to return the user data fake 'db' dictionary's UserSchema,

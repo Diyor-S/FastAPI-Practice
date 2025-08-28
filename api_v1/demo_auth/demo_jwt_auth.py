@@ -9,19 +9,23 @@ from fastapi import (
 )
 from typing import Annotated
 from fastapi.security import OAuth2PasswordBearer
-# from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jwt import InvalidTokenError
 from datetime import datetime, timezone
+from api_v1.demo_auth.helpers import create_access_token, create_refresh_token, TOKEN_TYPE_FIELD, ACCESS_TOKEN_TYPE
 
 
 class TokenInfo(BaseModel):
     access_token: str
-    token_type: str
+    refresh_token: str
+    token_type: str = "Bearer"
 
 
-router = APIRouter()
+http_bearer = HTTPBearer(auto_error=False)
 
-# http_bearer = HTTPBearer()
+router = APIRouter(dependencies=[Depends(http_bearer)])
+
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/jwt/login/")
 
 
@@ -89,6 +93,13 @@ def get_current_token_payload(
 def get_current_user(
         payload: Annotated[dict, Depends(get_current_token_payload)]
 ) -> UserSchema:
+    token_type = payload[TOKEN_TYPE_FIELD]
+    if token_type != ACCESS_TOKEN_TYPE:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"invalid token type, got {token_type}, expected {ACCESS_TOKEN_TYPE}"
+        )
+
     username = payload["username"]
     if username not in users_db:
         raise HTTPException(
@@ -109,16 +120,12 @@ def get_current_active_user(user: Annotated[UserSchema, Depends(get_current_user
 
 @router.post("/login/", response_model=TokenInfo)
 def auth_user_issue_jwt(user: Annotated[UserSchema, Depends(validate_auth_user)]) -> TokenInfo:
-    jwt_payload = {
-        "sub": user.username,
-        "username": user.username,
-        "email": user.email
-    }
-    access_token = auth_utils.encode_jwt(jwt_payload)
+    access_token = create_access_token(user)
+    refresh_token = create_refresh_token(user)
 
     return TokenInfo(
         access_token=access_token,
-        token_type="Bearer",
+        refresh_token=refresh_token,
     )
 
 

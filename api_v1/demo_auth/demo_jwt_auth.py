@@ -11,10 +11,12 @@ from api_v1.demo_auth.helpers import (
     create_refresh_token,
 )
 from api_v1.demo_auth.user_related_helpers import (
-    http_bearer,
-    validate_auth_user,
     get_current_token_payload,
     get_current_active_user,
+)
+from api_v1.demo_auth.validation import (
+    http_bearer,
+    validate_auth_user,
 )
 
 router = APIRouter(dependencies=[Depends(http_bearer)])
@@ -45,3 +47,8 @@ def auth_user_check_self_info(
         "email": user.email,
         "logged_in_at": human_readable_logged_at
     }
+
+
+@router.post('/login/refresh')
+def auth_user_refresh():
+    pass

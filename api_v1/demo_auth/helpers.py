@@ -3,6 +3,7 @@ from users.schemas import UserSchema
 from core.config import settings
 from datetime import timedelta
 
+
 TOKEN_TYPE_FIELD = "type"
 ACCESS_TOKEN_TYPE = "access"
 REFRESH_TOKEN_TYPE = "refresh"
@@ -45,3 +46,5 @@ def create_refresh_token(user: UserSchema) -> str:
         token_data=jwt_payload,
         expire_timedelta=timedelta(days=settings.auth_jwt.refresh_token_expire_days)
     )
+
+

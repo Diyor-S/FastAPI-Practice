@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status  # APIRouter for r
 # system  HTTPException for throwing exceptions , and status to showing status code when those exceptions occur.
 from fastapi.security import HTTPBasic, HTTPBasicCredentials  # Http Basic for basic username, password authentication
 # HTTPBasicCredentials is what actually stores username and password stuff.
-from typing import Annotated, Any # Annotated for type hints.
+from typing import Annotated, Any  # Annotated for type hints.
 from fastapi import Header, Response, Cookie  # Header to receive data from the response header
 from time import time
 
@@ -117,6 +117,8 @@ def demo_auth_basic_username(auth_username: Annotated[str, Depends(get_auth_user
 
 # Here, the username is being passed via get_auth_user_username. 'Depends' calls this function for me and makes sure that it got the
 # token from header and as a result returns the username of the user in the fake 'db'.
+
+
 @router.get("/http-header-auth/")
 def demo_auth_some_http_username(username: Annotated[str, Depends(get_username_by_auth_static_token)]):
     return {

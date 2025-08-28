@@ -39,18 +39,24 @@ def get_user_by_sub(payload: Annotated[dict, Depends(get_current_token_payload)]
     return users_db[username]
 
 
-def get_current_user(
+def get_current_user_from_token_type(token_type: str):
+    def get_current_user_from_token(
         payload: Annotated[dict, Depends(get_current_token_payload)]
-) -> UserSchema:
-    validate_token_type(payload, payload[ACCESS_TOKEN_TYPE])
-    return get_user_by_sub(payload)
+    ):
+        validate_token_type(payload, token_type)
+        return get_user_by_sub(payload)
+    return get_current_user_from_token
 
 
-def get_current_user_for_refresh(
-        payload: Annotated[dict, Depends(get_current_token_payload)]
-) -> UserSchema:
-    validate_token_type(payload, payload[REFRESH_TOKEN_TYPE])
-    return get_user_by_sub(payload)
+# We can now pass this get_current_user to Depends it would call it.
+get_current_user = get_current_user_from_token_type(ACCESS_TOKEN_TYPE)
+
+# No need for this anymore: since it is solved with the higher order versatile function
+# def get_current_user(
+#         payload: Annotated[dict, Depends(get_current_token_payload)]
+# ) -> UserSchema:
+#     validate_token_type(payload, payload[ACCESS_TOKEN_TYPE])
+#     return get_user_by_sub(payload)
 
 
 def get_current_active_user(user: Annotated[UserSchema, Depends(get_current_user)]) -> UserSchema:
@@ -60,3 +66,28 @@ def get_current_active_user(user: Annotated[UserSchema, Depends(get_current_user
             detail="user inactive",
         )
     return user
+
+
+class UserGetterFromToken:
+    def __init__(self, token_type):
+        self.token_type = token_type
+
+    def __call__(
+        self,
+        payload: Annotated[dict, Depends(get_current_token_payload)]
+    ):
+        validate_token_type(payload, token_type=self.token_type)
+        return get_user_by_sub(payload)
+
+
+get_current_user_refresh = UserGetterFromToken(REFRESH_TOKEN_TYPE)
+
+# No need for this anymore: since the above class implements method call and gets the user.
+# def get_current_user_for_refresh(
+#         payload: Annotated[dict, Depends(get_current_token_payload)]
+# ) -> UserSchema:
+#     validate_token_type(payload, payload[REFRESH_TOKEN_TYPE])
+#     return get_user_by_sub(payload)
+
+
+

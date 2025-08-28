@@ -13,6 +13,7 @@ from api_v1.demo_auth.helpers import (
 from api_v1.demo_auth.user_related_helpers import (
     get_current_token_payload,
     get_current_active_user,
+    get_current_user_refresh,
 )
 from api_v1.demo_auth.validation import (
     http_bearer,
@@ -49,6 +50,11 @@ def auth_user_check_self_info(
     }
 
 
-@router.post('/login/refresh')
-def auth_user_refresh():
-    pass
+@router.post('/refresh/', response_model=TokenInfo, response_model_exclude_none=True)
+def auth_user_refresh(
+        user: Annotated[UserSchema, Depends(get_current_user_refresh)]
+):
+    access_token = create_access_token(user)
+    return TokenInfo(
+        access_token=access_token
+    )

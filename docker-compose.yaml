@@ -8,6 +8,8 @@ services:
       POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
   adminer:
     image: adminer
@@ -17,8 +19,11 @@ services:
   pgadmin:
     image: dpage/pgadmin4
     environment:
-      PDADMIN_DEFAULT_EMAIL: "admin@admin.org"
+      PGADMIN_DEFAULT_EMAIL: "admin@admin.org"
       PGADMIN_DEFAULT_PASSWORD: admin
-      PG_ADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
       - "50505:80"
+
+volumes:
+  pgdata:

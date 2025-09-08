@@ -1,6 +1,7 @@
-from core.models import Base, IntIdPkMixin
+from core.models import Base
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import UniqueConstraint
+from core.models.mixins import IntIdPkMixin
 
 
 class User(IntIdPkMixin, Base):

@@ -6,7 +6,7 @@ from core.models import User, db_helper
 
 from typing import Annotated, Sequence
 
-router = APIRouter()
+router = APIRouter(tags=["Users"])
 
 
 @router.get("", response_model=list[UserRead])

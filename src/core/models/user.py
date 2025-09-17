@@ -1,12 +1,9 @@
 from core.models import Base
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import UniqueConstraint
-from core.models.mixins import IntIdPkMixin
+from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
+from fastapi import Depends
 
 
-class User(IntIdPkMixin, Base):
-    username: Mapped[str] = mapped_column(unique=True)
-    foo: Mapped[int]
-    bar: Mapped[int]
+class User(Base, SQLAlchemyBaseUserTable[int]):
+    pass
 
-    __table_args__ = (UniqueConstraint("foo", "bar"),)

@@ -1,7 +1,7 @@
 from core.models import Base
 from core.models.mixins import IntIdPkMixin
 from core.types import UserIdType
-from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
+from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
 from typing import TYPE_CHECKING
 
 

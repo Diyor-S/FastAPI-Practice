@@ -15,8 +15,8 @@ class AccessToken(Base, SQLAlchemyBaseAccessTokenTable[UserIdType]):
         ForeignKey(
             "users.id",
             ondelete="cascade",
-            nullable=False,
-        )
+        ),
+        nullable=False,
     )
 
     @classmethod

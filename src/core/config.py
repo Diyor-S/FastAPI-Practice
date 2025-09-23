@@ -33,6 +33,10 @@ class DatabaseConfig(BaseModel):
     }
 
 
+class AccessTokenConfig(BaseModel):
+    lifetime_seconds: int = 3600
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(".env_template", ".env"),
@@ -44,6 +48,7 @@ class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     api: APIPrefix = APIPrefix()
     db: DatabaseConfig
+    access_token: AccessTokenConfig = AccessTokenConfig()
 
 
 settings = Settings()

@@ -1,8 +1,8 @@
 from fastapi import Depends
-from fastapi_users.authentication.strategy.db import AccessTokenDatabase, DatabaseStrategy
+from fastapi_users.authentication.strategy.db import DatabaseStrategy
 
 from core.config import settings
-from api.api_v1.dependencies import get_access_token_db
+from api.dependencies import get_access_token_db
 
 from typing import Annotated, TYPE_CHECKING
 

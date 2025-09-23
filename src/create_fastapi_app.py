@@ -6,7 +6,6 @@ from fastapi.openapi.docs import (
     get_swagger_ui_oauth2_redirect_html,
 )
 from core.lifespan import lifespan
-from core.models import db_helper
 
 
 def register_static_docs_routes(app: FastAPI):
@@ -45,5 +44,3 @@ def create_app(
         register_static_docs_routes(app)
 
     return app
-
-
